@@ -13,14 +13,21 @@ g_server="git.example.com"
 g_user="Joe.User"
 g_repo="foobar-repo.git"
 
-
 function push(){
     tar -czvf $stagedir/daily.tar.gz $repodir >/dev/null 2>&1
     cd $stagedir
     gpg -er $key_email $stagedir/daily.tar.gz
-    git add daily.tar.gz.gpg
-    git commit -m "Daily Commit"
-    git push -u origin master
+    if [ ! $syncstuff ]; then
+        git add daily.tar.gz.gpg
+        git commit -m "Daily Commit"
+        git push -u origin master
+    else 
+        if [ -d /Users ]; then
+            md5 $stagedir/daily.tar.gz.gpg
+        else
+            md5sum $stagedir/daily.tar.gz.gpg
+        fi
+    fi
     rm $stagedir/daily.tar.gz
 }
 
@@ -41,9 +48,10 @@ function fixstuff(){
     git remote add origin $g_server:$g_user/$g_repo
 }
 
+
 function usage(){
     echo
-    echo "$0 (push|pull|reset)"
+    echo "$0 (push|pull|reset|hash)"
     echo
 }
 
@@ -51,7 +59,8 @@ input="$(echo $1 | tr '[:upper:]' '[:lower:]')"
 
 case "$input" in
     "push" )
-         push
+        syncstuff = true
+        push
      ;;
     "pull" )
         pull
@@ -59,8 +68,12 @@ case "$input" in
     "reset" )
         fixstuff
     ;;
+    "hash" )
+        push
+    ;;
     * ) 
         usage
         exit 1
 esac
+
 
