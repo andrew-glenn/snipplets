@@ -10,14 +10,15 @@ stagedir="$HOME/.encrypt-staging"
 repodir="$HOME/.gitrepos"
 key_email="foo@bar.com"
 g_server="git.example.com"
-g_user="Joe.User"
-g_repo="foobar-repo.git"
+g_user="JoeSmith"
+g_repo="YourRepo.git"
+
 
 function push(){
     tar -czvf $stagedir/daily.tar.gz $repodir >/dev/null 2>&1
     cd $stagedir
     gpg -er $key_email $stagedir/daily.tar.gz
-    if [ ! $syncstuff ]; then
+    if [  $syncstuff ]; then
         git add daily.tar.gz.gpg
         git commit -m "Daily Commit"
         git push -u origin master
@@ -59,7 +60,7 @@ input="$(echo $1 | tr '[:upper:]' '[:lower:]')"
 
 case "$input" in
     "push" )
-        syncstuff = true
+        syncstuff=true
         push
      ;;
     "pull" )
@@ -75,5 +76,4 @@ case "$input" in
         usage
         exit 1
 esac
-
 
