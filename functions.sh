@@ -1,4 +1,3 @@
-
 function goodmorning(){
     # do the ssh-agent stuff
     eval $(ssh-agent -s)
@@ -15,20 +14,24 @@ function goodmorning(){
     tmux select-layout -t rax3:0 even-vertical
 
     # When I get around to using finch
-#    tmux split-window -t rax3:0.1 -h
+    ## tmux split-window -t rax3:0.1 -h
+
+    # For pianobar
+    tmux split-window -t rax:0.0 -h
 
     # Start up all my crap.
     tmux send-keys -t rax3:0.0 "ssh shellbox" C-m 
     tmux send-keys -t rax3:0.0 "tmux attach -d" C-m 
     tmux send-keys -t rax3:0.1 "mutt" C-m 
     tmux send-keys -t rax3:0.2 "irssi" C-m 
+    tmux send-keys -t rax3:0.3 "pianobar" C-m 
 
     # Again, more finch stuff.
-#    tmux send-keys -t rax3:0.2 "weechat-curses" C-m
-#    tmux send-keys -t rax3:0.3 "irssi" C-m
+    # These pane numbers are jacked up, will need adjustment when I move to finch.
+    ## tmux send-keys -t rax3:0.2 "weechat-curses" C-m
+    ## tmux send-keys -t rax3:0.3 "irssi" C-m
     tmux attach -d -t rax3
 } 
-
 
 function keyscan() {
         for sshkey in $(ls ~/.ssh/*.key); do
