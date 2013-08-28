@@ -1,5 +1,5 @@
 
-n goodmorning(){
+function goodmorning(){
     # do the ssh-agent stuff
     eval $(ssh-agent -s)
     if test "$SSH_AUTH_SOCK"; then
