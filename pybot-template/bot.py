@@ -38,7 +38,7 @@ class Bobs(object):
 
     def parser(self, command):
         # Is the command bound? 
-        if command in self.variables:
+        if command in self.variables.keys():
             self.variables[command]()
         else:
             print "Sorry, %s isn't a bound command." %(command)
