@@ -39,8 +39,76 @@ function keyscan() {
         done    
 }
 
-function cya(){ 
-    datestring=$(date +%Y%m%d.%H%m)
-    cp $1{,-$datestring};
+
+# Aliases
+ssl_check(){
+
+REMHOST=$1
+REMPORT=${2:-443}
+
+thecert=$(echo | openssl s_client -connect ${REMHOST}:${REMPORT} 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p')
+
+function sedstuff() {
+	echo "$1" | sed -e 's/\/O=/\nOrganization: /g' -e 's/\/C=/Country: /g' -e 's/\/OU=/\nOrganizational Unit: /g' -e 's/\/CN=/\nCommon Name: /g' -e 's/\/L=/\nCity: /g' -e 's/\/ST=/\nState: /g' -e 's/\/emailAddress=/\nE-Mail: /g' -e 's/\/postalCode=/\nPostal Code: /g' -e 's/\/streetAddress=/\nStreet Address: /g'
 }
+
+echo  "$thecert"
+echo
+echo -e "Issued By\n--------------------------------"
+sedstuff "$(echo  "$thecert" | openssl x509 -noout -issuer -in /dev/stdin | sed -e 's/issuer=\ //')"
+echo
+echo -e "Issued To\n--------------------------------"
+sedstuff "$(echo  "$thecert" | openssl x509 -noout -subject -in /dev/stdin | sed -e 's/subject=\ //')"
+echo
+echo -e "Validity\n--------------------------------"
+echo  "$thecert" | openssl x509 -noout -startdate -in /dev/stdin | sed 's/notBefore=/From: /g'
+echo  "$thecert" | openssl x509 -noout -enddate -in /dev/stdin | sed 's/notAfter=/Till: /g'
+echo
+echo -e "Fingerprint\n-------------------------------"
+echo "$thecert" | openssl x509 -noout -in /dev/stdin -fingerprint | sed 's/^.*=//g'
+echo
+}
+
+check_ssl_file(){
+
+
+thecert=$(cat $1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p')
+
+
+echo  "$thecert"
+echo
+echo Issued By
+echo --------------------------------
+echo  "$thecert" | openssl x509 -noout -issuer -in /dev/stdin | sed s/issuer=\ // | sed 's/\/O=/\nOrganization: /g' | sed 's/\/C=/Country: /g' | sed 's/\/OU=/\nOrganizational Unit: /g' | sed 's/\/CN=/\nCommon Name: /g' | sed 's/\/L=/\nCity: /g' | sed 's/\/ST=/\nState: /g' | sed 's/\/emailAddress=/\nE-Mail: /g' | sed 's/\/postalCode=/\nPostal Code: /g' | sed 's/\/streetAddress=/\nStreet Address: /g'
+echo
+echo Issued To
+echo --------------------------------
+echo  "$thecert" | openssl x509 -noout -subject -in /dev/stdin | sed s/subject=\ // | sed 's/\/O=/\nOrganization: /g' | sed 's/\/C=/Country: /g' | sed 's/\/OU=/\nOrganizational Unit: /g' | sed 's/\/\CN=/\nCommon Name: /g' | sed 's/\/ST=/\nState: /g' | sed 's/\/L=/\nCity: /g' | sed 's/\/emailAddress=/\nE-Mail: /g' | sed 's/\/postalCode=/\nPostal Code: /g' | sed 's/\/streetAddress=/\nStreet Address: /g'
+echo
+echo Validity
+echo --------------------------------
+echo  "$thecert" | openssl x509 -noout -startdate -in /dev/stdin | sed 's/notBefore=/From: /g'
+echo  "$thecert" | openssl x509 -noout -enddate -in /dev/stdin | sed 's/notAfter=/Till: /g'
+echo
+}
+
+
+function doing_this(){
+	echo -ne "$TXT_YLW$1$TXT_RESET"
+}
+
+function done_box(){
+	echo -n -e "$1[$TXT_GREEN DONE $TXT_RESET]\n"
+}
+
+function check_ip() {
+    echo "$1    $(curl -sH "Accept: application/json" http://whois.arin.net/rest/ip/$1 |  sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | egrep '(customer|org)Ref' | sed 's/\"//g'| cut -d : -f 3)"
+
+}
+
+function gtfo(){
+    xscreensaver-command -lock
+    /home/ag/.gitrepos/bin/gitsync.sh
+}
+
 
