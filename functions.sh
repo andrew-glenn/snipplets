@@ -41,32 +41,52 @@ function keyscan() {
 
 
 # Aliases
-ssl_check(){
 
-REMHOST=$1
-REMPORT=${2:-443}
+function ssl_check(){
+    while getopts ":d" opt; do 
+        case $opt in 
+            d)
+                local _debug_enabled='yes'
+            ;;
+        esac
+    done
 
-thecert=$(echo | openssl s_client -connect ${REMHOST}:${REMPORT} 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p')
+    REMHOST=$1
+    REMPORT=${2:-443}
 
-function sedstuff() {
-	echo "$1" | sed -e 's/\/O=/\nOrganization: /g' -e 's/\/C=/Country: /g' -e 's/\/OU=/\nOrganizational Unit: /g' -e 's/\/CN=/\nCommon Name: /g' -e 's/\/L=/\nCity: /g' -e 's/\/ST=/\nState: /g' -e 's/\/emailAddress=/\nE-Mail: /g' -e 's/\/postalCode=/\nPostal Code: /g' -e 's/\/streetAddress=/\nStreet Address: /g'
-}
+    thecert=$(echo | openssl s_client -connect ${REMHOST}:${REMPORT} 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p')
 
-echo  "$thecert"
-echo
-echo -e "Issued By\n--------------------------------"
-sedstuff "$(echo  "$thecert" | openssl x509 -noout -issuer -in /dev/stdin | sed -e 's/issuer=\ //')"
-echo
-echo -e "Issued To\n--------------------------------"
-sedstuff "$(echo  "$thecert" | openssl x509 -noout -subject -in /dev/stdin | sed -e 's/subject=\ //')"
-echo
-echo -e "Validity\n--------------------------------"
-echo  "$thecert" | openssl x509 -noout -startdate -in /dev/stdin | sed 's/notBefore=/From: /g'
-echo  "$thecert" | openssl x509 -noout -enddate -in /dev/stdin | sed 's/notAfter=/Till: /g'
-echo
-echo -e "Fingerprint\n-------------------------------"
-echo "$thecert" | openssl x509 -noout -in /dev/stdin -fingerprint | sed 's/^.*=//g'
-echo
+    function sedstuff() {
+            [[ "$2" == "issuer" ]] && local _openssl_arg='-issuer' && local _sed_arg='issuer' 
+            [[ "$2" == "subject" ]] && local _openssl_arg='-subject' && local _sed_arg='subject' 
+             echo "$1" | openssl x509 -noout ${_openssl_arg} -in /dev/stdin | sed -e "s/${_sed_arg}=\ //g" \
+                    -e 's/\/O=/\nOrganization:|/g' \
+                    -e 's/\/C=/Country:|/g' \
+                    -e 's/\/OU=/\nOrganizational Unit:|/g' \
+                    -e 's/\/CN=/\nCommon Name:|/g' \
+                    -e 's/\/L=/\nCity:|/g' \
+                    -e 's/\/ST=/\nState:|/g' \
+                    -e 's/\/emailAddress=/\nE-Mail:|/g' \
+                    -e 's/\/postalCode=/\nPostal Code:|/g' \
+                    -e 's/\/streetAddress=/\nStreet Address:|/g' | column -t -s '|'
+    }
+    [ ! -z $_debug_enabled ] && echo -e "$thecert\n"
+    echo -e "Issued By\n--------------------------------"
+    sedstuff "$thecert" "issuer"
+    echo
+    echo -e "Issued To\n--------------------------------"
+    sedstuff "$thecert" "subject"
+    echo
+    echo -e "Validity\n--------------------------------"
+    echo "$thecert" | openssl x509 -noout -startdate -in /dev/stdin | sed 's/notBefore=/From: /g'
+    echo "$thecert" | openssl x509 -noout -enddate -in /dev/stdin | sed 's/notAfter=/Till: /g'
+    echo
+    echo -e "Fingerprint\n-------------------------------"
+    echo "$thecert" | openssl x509 -noout -in /dev/stdin -fingerprint | sed 's/^.*=//g'
+    echo
+    echo -e "Subject Alternative Names\n-------------------------------"                                                
+    echo "$thecert" | openssl x509 -noout -in /dev/stdin -text | grep 'DNS:' | sed -e 's/DNS://g' -e 's/               //g' -e 's/\,\ /\n/g' | sort
+    unset opt _debug_enabled _sed_arg _openssl_arg thecert
 }
 
 check_ssl_file(){
